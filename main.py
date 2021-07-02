@@ -9,7 +9,7 @@ import geocoder
 import random
 import asyncio
 
-TOKEN = "ODYwMDE3NzMxNDY5MzEyMDEw.YN1H7Q.MFnobGAQHpwfFwxz8tV1O5pw9_Y"
+TOKEN = {Insert Token Here}
 client = discord.Client(); # This is the connection to discord
 
 def get_quote():
