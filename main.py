@@ -13,10 +13,11 @@ NAME_OF_BOT = "StarGazer"
 def help():
     # a help function that returns the different functions that the bot can do
     output = "Hello, i'm " + NAME_OF_BOT + ", here is what I can do for you:\n" + \
-             "> \'$iss_loc\' to get the location of the ISS\n" \
-             "> \'$iss_ast\' to get the astronauts on the ISS\n" \
-             "> \'$ppl_spc\' to get the total amount of people in space\n" \
-             "> \'!role (#1)d(#2)\' to get #1 many roles of die with #2 sides"
+             "> - \'$loc_iss\' to get the location of the ISS\n" \
+             "> - \'$ppl_iss\' to get the astronauts on the ISS\n" \
+             "> - \'$ppl_spc\' to get the total amount of people in space\n" \
+             "> - \'$obj_spc\' to get the number of objects in space\n" \
+             "> - \'!role (#1)d(#2)\' to get #1 many roles of die with #2 sides"
     return output
 
 def get_people_on_iss():
@@ -73,8 +74,18 @@ def get_objects_in_space():
     # Using an api, return the amount of objects in space
     response = requests.get("https://api.le-systeme-solaire.net/rest/knowncount/")
     request = json.loads(response.text)
+    #print(len(request["knowncount"]))
 
-    return
+    # prepare an output to return
+    output = "What objects are in space right now?\nHere are the amounts and when " \
+             "they were last updated:\n"
+
+    # iterate through the list and place the data into the output
+    for i in range(len(request["knowncount"])):
+        output += "> - " + str(request["knowncount"][i]["knownCount"]) +  \
+                  " " + request["knowncount"][i]["id"] + "(s) since: " + \
+                  request["knowncount"][i]["updateDate"] + "\n"
+    return output
 
 def role_num(message):
     # Role a die sent in by the user
@@ -118,6 +129,7 @@ class MyClient(discord.Client):
 
     async def on_ready(self):
         print("Logged on as {0}".format(self.user))
+        get_objects_in_space()
 
     async def on_message(self, message):
         print("User {0.author}: {0.content}".format(message))
@@ -131,12 +143,12 @@ class MyClient(discord.Client):
             return
 
         # if the user asks for the ISS location
-        if message.content.startswith('$iss_loc') or \
+        if message.content.startswith('$loc_iss') or \
                 message.content.startswith("where is the iss"):
             response = get_location_iss()
             await message.reply(response, mention_author = True)
 
-        if message.content.startswith('$iss_ast') or \
+        if message.content.startswith('$ppl_iss') or \
                 message.content.startswith("who is on the iss"):
             response = get_people_on_iss()
             await message.reply(response, mention_author = True)
@@ -152,6 +164,11 @@ class MyClient(discord.Client):
 
         if message.content.startswith("$help"):
             response = help()
+            await message.reply(response, mention_author = True)
+
+        if message.content.startswith("$obj_spc") or \
+                message.content.startswith("what objects are in space"):
+            response = get_objects_in_space()
             await message.reply(response, mention_author = True)
 
         if message.content.startswith("givemearole"):
