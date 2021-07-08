@@ -132,6 +132,9 @@ class MyClient(discord.Client):
         get_objects_in_space()
 
     async def on_message(self, message):
+
+
+
         print("User {0.author}: {0.content}".format(message))
 
         # This is so that no matter the input sent by the user (even with camel case)
@@ -146,20 +149,24 @@ class MyClient(discord.Client):
         if message.content.startswith('$loc_iss') or \
                 message.content.startswith("where is the iss"):
             response = get_location_iss()
+            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
             await message.reply(response, mention_author = True)
 
         if message.content.startswith('$ppl_iss') or \
                 message.content.startswith("who is on the iss"):
             response = get_people_on_iss()
+            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
             await message.reply(response, mention_author = True)
 
         if message.content.startswith('$ppl_spc') or \
                 message.content.startswith("who is in space"):
             response = get_people_in_space()
+            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
             await message.reply(response, mention_author = True)
 
         if message.content.startswith("!role"):
             response = role_num(message.content)
+            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
             await message.reply(response, mention_author = True)
 
         if message.content.startswith("$help"):
@@ -169,12 +176,13 @@ class MyClient(discord.Client):
         if message.content.startswith("$obj_spc") or \
                 message.content.startswith("what objects are in space"):
             response = get_objects_in_space()
+            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name = "Space Enthusiast"))
             await message.reply(response, mention_author = True)
 
-        if message.content.startswith("givemearole"):
+        ''' if message.content.startswith("givemearole"):
             user = message.author
-            role = discord.utils.get(user.guild.roles, name = "Space Enthusiast")
-            await user.add_roles(role)
+            role = discord.utils.get(message.author.guild.roles, name = "Space Enthusiast")
+            await user.add_roles(role)'''
 
 client = MyClient()
 client.run(TOKEN)
