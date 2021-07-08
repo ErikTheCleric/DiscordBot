@@ -132,9 +132,7 @@ class MyClient(discord.Client):
         get_objects_in_space()
 
     async def on_message(self, message):
-
-
-
+        meesageTag = False # Message has an author and the role may be altered at the end because of their response
         print("User {0.author}: {0.content}".format(message))
 
         # This is so that no matter the input sent by the user (even with camel case)
@@ -149,24 +147,23 @@ class MyClient(discord.Client):
         if message.content.startswith('$loc_iss') or \
                 message.content.startswith("where is the iss"):
             response = get_location_iss()
-            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
+            messageTag = True   # The user has asked a space question!
             await message.reply(response, mention_author = True)
 
         if message.content.startswith('$ppl_iss') or \
                 message.content.startswith("who is on the iss"):
             response = get_people_on_iss()
-            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
+            messageTag = True   # The user has asked a space question!
             await message.reply(response, mention_author = True)
 
         if message.content.startswith('$ppl_spc') or \
                 message.content.startswith("who is in space"):
             response = get_people_in_space()
-            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
+            messageTag = True   # The user has asked a space question!
             await message.reply(response, mention_author = True)
 
         if message.content.startswith("!role"):
             response = role_num(message.content)
-            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
             await message.reply(response, mention_author = True)
 
         if message.content.startswith("$help"):
@@ -176,13 +173,24 @@ class MyClient(discord.Client):
         if message.content.startswith("$obj_spc") or \
                 message.content.startswith("what objects are in space"):
             response = get_objects_in_space()
-            await message.author.add_roles(discord.utils.get(message.author.guild.roles, name = "Space Enthusiast"))
+            messageTag = True   # The user has asked a space question!
             await message.reply(response, mention_author = True)
 
-        ''' if message.content.startswith("givemearole"):
+        # If someone asks questions using the bot, they are given some extra roles and are promoted based on their
+        # questions and how frequently they ask quesetions
+        if messageTag == True:
             user = message.author
-            role = discord.utils.get(message.author.guild.roles, name = "Space Enthusiast")
-            await user.add_roles(role)'''
+            if discord.utils.get(user.roles, name = "Certified Astronaut"):
+                user = message.author       # Placeholder for now
+            elif discord.utils.get(user.roles, name = "Outerspace Explorer"):
+                await user.add_roles(discord.utils.get(user.guild.roles, name="Certified Astronaut"))
+                await user.remove_roles(discord.utils.get(user.guild.roles, name="Outerspace Explorer"))
+            elif discord.utils.get(user.roles, name = "Space Enthusiast"):
+                await user.add_roles(discord.utils.get(user.guild.roles, name="Outerspace Explorer"))
+                await user.remove_roles(discord.utils.get(user.guild.roles, name="Space Enthusiast"))
+            else:
+                await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
+            messageTag = False
 
 client = MyClient()
 client.run(TOKEN)
