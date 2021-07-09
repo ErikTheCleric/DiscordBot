@@ -1,23 +1,38 @@
 # Erik Hale 7/1/2021
 # Discord Bot code for: StarGazer
 
+# This bot has the added capabilities of a role function from the base Discord bot
+#   this was done because I wanted to test a rolling function for a discord bot that 
+#   my friend needed implemented
+
+# This Discord bot (using your own TOKEN from your discord bot) relays different
+#   space quandaries like who is in space at the moment or the different types of
+#   objects and their quantities in space. This is all done through a variety of 
+#   APIs, which pulls the information from the interface and reformat the data 
+#   to be friendlier to Discord. There is also a unique "promotion" of roles: 
+#   Whenever you ask a question you are promoted to a higher tier of role.
+
+# Future features to work on:
+#   > More space links and APIs (perhaps more about planets and their facts)
+#   > Pre-adding the roles into a server that are necessary for the promotions
+
 import discord
 import requests
 import json
 import geocoder
-
 import random
 
-TOKEN = {Your Token Here}
+TOKEN = {Your token here}
 NAME_OF_BOT = "StarGazer"
 
 def help():
     # a help function that returns the different functions that the bot can do
     output = "Hello, i'm " + NAME_OF_BOT + ", here is what I can do for you:\n" + \
-             "> \'$iss_loc\' to get the location of the ISS\n" \
-             "> \'$iss_ast\' to get the astronauts on the ISS\n" \
-             "> \'$ppl_spc\' to get the total amount of people in space\n" \
-             "> \'!role (#1)d(#2)\' to get #1 many roles of die with #2 sides"
+             "> - \'$loc_iss\' to get the location of the ISS\n" \
+             "> - \'$ppl_iss\' to get the astronauts on the ISS\n" \
+             "> - \'$ppl_spc\' to get the total amount of people in space\n" \
+             "> - \'$obj_spc\' to get the number of objects in space\n" \
+             "> - \'!role (#1)d(#2)\' to get #1 many roles of die with #2 sides"
     return output
 
 def get_people_on_iss():
@@ -74,8 +89,18 @@ def get_objects_in_space():
     # Using an api, return the amount of objects in space
     response = requests.get("https://api.le-systeme-solaire.net/rest/knowncount/")
     request = json.loads(response.text)
+    #print(len(request["knowncount"]))
 
-    return
+    # prepare an output to return
+    output = "What objects are in space right now?\nHere are the amounts and when " \
+             "they were last updated:\n"
+
+    # iterate through the list and place the data into the output
+    for i in range(len(request["knowncount"])):
+        output += "> - " + str(request["knowncount"][i]["knownCount"]) +  \
+                  " " + request["knowncount"][i]["id"] + "(s) since: " + \
+                  request["knowncount"][i]["updateDate"] + "\n"
+    return output
 
 def role_num(message):
     # Role a die sent in by the user
@@ -116,10 +141,13 @@ def role_num(message):
     return output
 
 class MyClient(discord.Client):
+
     async def on_ready(self):
         print("Logged on as {0}".format(self.user))
 
+
     async def on_message(self, message):
+        meesageTag = False # Message has an author and the role may be altered at the end because of their response
         print("User {0.author}: {0.content}".format(message))
 
         # This is so that no matter the input sent by the user (even with camel case)
@@ -131,28 +159,57 @@ class MyClient(discord.Client):
             return
 
         # if the user asks for the ISS location
-        if message.content.startswith('$iss_loc') or \
+        if message.content.startswith('$loc_iss') or \
                 message.content.startswith("where is the iss"):
             response = get_location_iss()
+            messageTag = True   # The user has asked a space question!
             await message.reply(response, mention_author = True)
 
-        if message.content.startswith('$iss_ast') or \
+        # if the user asks about the people in the ISS at the moment
+        if message.content.startswith('$ppl_iss') or \
                 message.content.startswith("who is on the iss"):
             response = get_people_on_iss()
+            messageTag = True   # The user has asked a space question!
             await message.reply(response, mention_author = True)
 
+        # if the user asks about the people in space (All of them)
         if message.content.startswith('$ppl_spc') or \
                 message.content.startswith("who is in space"):
             response = get_people_in_space()
+            messageTag = True   # The user has asked a space question!
             await message.reply(response, mention_author = True)
 
         if message.content.startswith("!role"):
             response = role_num(message.content)
             await message.reply(response, mention_author = True)
 
+        # If the user wants to know about the different functions
         if message.content.startswith("$help"):
             response = help()
             await message.reply(response, mention_author = True)
+
+        # if someone wants to know what objects are in space
+        if message.content.startswith("$obj_spc") or \
+                message.content.startswith("what objects are in space"):
+            response = get_objects_in_space()
+            messageTag = True   # The user has asked a space question!
+            await message.reply(response, mention_author = True)
+
+        # If someone asks questions using the bot, they are given some extra roles and are promoted based on their
+        # questions and how frequently they ask quesetions
+        if messageTag == True:
+            user = message.author
+            if discord.utils.get(user.roles, name = "Certified Astronaut"):
+                user = message.author       # Placeholder for now
+            elif discord.utils.get(user.roles, name = "Outerspace Explorer"):
+                await user.add_roles(discord.utils.get(user.guild.roles, name="Certified Astronaut"))
+                await user.remove_roles(discord.utils.get(user.guild.roles, name="Outerspace Explorer"))
+            elif discord.utils.get(user.roles, name = "Space Enthusiast"):
+                await user.add_roles(discord.utils.get(user.guild.roles, name="Outerspace Explorer"))
+                await user.remove_roles(discord.utils.get(user.guild.roles, name="Space Enthusiast"))
+            else:
+                await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
+            messageTag = False
 
 client = MyClient()
 client.run(TOKEN)
