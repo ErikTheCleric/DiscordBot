@@ -104,7 +104,7 @@ class MyClient(discord.Client):
 
 
     async def on_message(self, message):
-        meesageTag = False # Message has an author and the role may be altered at the end because of their response
+        messageTag = False # Message has an author and the role may be altered at the end because of their response
         print("User {0.author}: {0.content}".format(message))
 
         # This is so that no matter the input sent by the user (even with camel case)
