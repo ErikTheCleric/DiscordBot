@@ -10,16 +10,36 @@
 
 # Future features to work on:
 #   > More space links and APIs (perhaps more about planets and their facts)
+#       > Calculate how far away the ISS is to you?
 #   > Pre-adding the roles into a server that are necessary for the promotions
 
+# One thing that I have added was permissions, below are all the permissions and the
+# website to have a guide to add more or take away some. I have OR-ed the values together
+# and placed that in the permssions tab:
+# 0x40 | 0x200 | 0x400 | 0x1 | 0x4000000 | 0x800 | 0x4000 | 0x8000 | 0x10000 | 0x20000 | 0x40000 | 0x100000 | 0x200000
+# website: https://discord.com/developers/docs/topics/permissions
+
+import os
 import discord
 import requests
+import sys
 import json
 import geocoder
+from discord.utils import get
 import random
 
 TOKEN = (Your Token Here)
 NAME_OF_BOT = "StarGazer"
+
+permissions = 70766145
+print(permissions)
+
+client = discord.Client()
+
+RANK1 = "Space Enthusiast"
+RANK2 = "Outerspace Explorer"
+RANK3 = "Certified Astronaut"
+rank = [RANK1, RANK2, RANK3]
 
 def help():
     # a help function that returns the different functions that the bot can do
@@ -97,72 +117,35 @@ def get_objects_in_space():
                   request["knowncount"][i]["updateDate"] + "\n"
     return output
 
-class MyClient(discord.Client):
+@client.event
+async def on_ready():
+    print("{0.user} logging in".format(client))
 
-    async def on_ready(self):
-        print("Logged on as {0}".format(self.user))
+@client.event
+async def on_message(message):
+    # To have the "promoting roles" idea, we need to make sure that there are
+    # the roles, so we will create them if they aren't there already
+    for i in rank:
+        color = 0xffffff
+        if get(message.guild.roles, name=i):
+            return # it's already a role and thus doesn't need to be created again
+        else:
+            if(i == RANK1):
+                color = 0x229954
+            if(i == RANK2):
+                color = 0x6495ED
+            if(i == RANK3):
+                color = 0xFF0800
+            await message.guild.create_role(name=i, color=discord.Color(color),
+                                            permissions = discord.Permissions(permissions))
 
+    # We don't want the bot to talk to itself
+    if message.author == client.user:
+        return
 
-    async def on_message(self, message):
-        messageTag = False # Message has an author and the role may be altered at the end because of their response
-        print("User {0.author}: {0.content}".format(message))
+    # Turn off the bot
+    if message.content.startswith("$stopTheBot"):
+        print("Exit command recieved")
+        await client.close()
 
-        # This is so that no matter the input sent by the user (even with camel case)
-        # would still register and StarGazer would return a response
-        message.content = message.content.lower()
-
-        # We don't want the bot to repeat itself or reply to itself
-        if message.author.id == self.user.id:
-            return
-
-        # if the user asks for the ISS location
-        if message.content.startswith('$loc_iss') or \
-                message.content.startswith("where is the iss"):
-            response = get_location_iss()
-            messageTag = True   # The user has asked a space question!
-            await message.reply(response, mention_author = True)
-
-        # if the user asks about the people in the ISS at the moment
-        if message.content.startswith('$ppl_iss') or \
-                message.content.startswith("who is on the iss"):
-            response = get_people_on_iss()
-            messageTag = True   # The user has asked a space question!
-            await message.reply(response, mention_author = True)
-
-        # if the user asks about the people in space (All of them)
-        if message.content.startswith('$ppl_spc') or \
-                message.content.startswith("who is in space"):
-            response = get_people_in_space()
-            messageTag = True   # The user has asked a space question!
-            await message.reply(response, mention_author = True)
-
-        # If the user wants to know about the different functions
-        if message.content.startswith("$help"):
-            response = help()
-            await message.reply(response, mention_author = True)
-
-        # if someone wants to know what objects are in space
-        if message.content.startswith("$obj_spc") or \
-                message.content.startswith("what objects are in space"):
-            response = get_objects_in_space()
-            messageTag = True   # The user has asked a space question!
-            await message.reply(response, mention_author = True)
-
-        # If someone asks questions using the bot, they are given some extra roles and are promoted based on their
-        # questions and how frequently they ask quesetions
-        if messageTag == True:
-            user = message.author
-            if discord.utils.get(user.roles, name = "Certified Astronaut"):
-                user = message.author       # Placeholder for now
-            elif discord.utils.get(user.roles, name = "Outerspace Explorer"):
-                await user.add_roles(discord.utils.get(user.guild.roles, name="Certified Astronaut"))
-                await user.remove_roles(discord.utils.get(user.guild.roles, name="Outerspace Explorer"))
-            elif discord.utils.get(user.roles, name = "Space Enthusiast"):
-                await user.add_roles(discord.utils.get(user.guild.roles, name="Outerspace Explorer"))
-                await user.remove_roles(discord.utils.get(user.guild.roles, name="Space Enthusiast"))
-            else:
-                await message.author.add_roles(discord.utils.get(message.author.guild.roles, name="Space Enthusiast"))
-            messageTag = False
-
-client = MyClient()
 client.run(TOKEN)
