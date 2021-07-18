@@ -25,7 +25,7 @@ import json
 import geocoder
 from discord.utils import get
 
-TOKEN = "ODYwMDE3NzMxNDY5MzEyMDEw.YN1H7Q.GpN37d4y5uJuI54qar9y7u9cK1o"
+TOKEN = (Your Discord Token Here)
 NAME_OF_BOT = "StarGazer"
 
 # The Permissions for the created roles
